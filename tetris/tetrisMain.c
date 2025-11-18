@@ -1,6 +1,7 @@
 #include <msp430.h>
 #include <libTimer.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "lcdutils.h"
 #include "lcddraw.h"
 
@@ -28,12 +29,23 @@
 void spawn_piece();
 void draw_current_piece();
 
-unsigned short grid[BOARD_ROWS][BOARD_COLS] = {0}; //this is the grid that stores if the place is occupied
+uint8_t grid[BOARD_ROWS][BOARD_COLS] = {0}; //this is the grid that stores if the place is occupied
+
+const unsigned short colorMap[8] = {
+  COLOR_BLACK,   // 0 = empty
+  COLOR_CYAN,    // 1 = I
+  COLOR_YELLOW,  // 2 = O
+  COLOR_PURPLE,  // 3 = T
+  COLOR_ORANGE,  // 4 = L
+  COLOR_BLUE,    // 5 = J
+  COLOR_GREEN,   // 6 = S
+  COLOR_RED      // 7 = Z
+};
 
 typedef struct {
   char shape [4][4][4]; //each peice has a shape wit curr  rotation, row and col
   char nrot; //rotaion logic based on piece, how many diff rotations
-  unsigned short color; //piece color
+  uint8_t id; //piece color
 } Tetromino;
 
 const Tetromino tetrominoes[7] = {//Seven unique pieces with amount of unique rotations + color
@@ -42,43 +54,43 @@ const Tetromino tetrominoes[7] = {//Seven unique pieces with amount of unique ro
   { {{{0,0,0,0},{1,1,1,1},{0,0,0,0},{0,0,0,0}},
      {{0,0,1,0},{0,0,1,0},{0,0,1,0},{0,0,1,0}},
      {{0,0,0,0},{1,1,1,1},{0,0,0,0},{0,0,0,0}},
-     {{0,0,1,0},{0,0,1,0},{0,0,1,0},{0,0,1,0}}}, 2, COLOR_I },
+     {{0,0,1,0},{0,0,1,0},{0,0,1,0},{0,0,1,0}}}, 2, 1},
 
   // O
   { {{{0,1,1,0},{0,1,1,0},{0,0,0,0},{0,0,0,0}},
      {{0,1,1,0},{0,1,1,0},{0,0,0,0},{0,0,0,0}},
      {{0,1,1,0},{0,1,1,0},{0,0,0,0},{0,0,0,0}},
-     {{0,1,1,0},{0,1,1,0},{0,0,0,0},{0,0,0,0}}}, 1, COLOR_O },
+     {{0,1,1,0},{0,1,1,0},{0,0,0,0},{0,0,0,0}}}, 1, 2},
 
   // T
   { {{{0,1,0,0},{1,1,1,0},{0,0,0,0},{0,0,0,0}},
      {{0,1,0,0},{0,1,1,0},{0,1,0,0},{0,0,0,0}},
      {{0,0,0,0},{1,1,1,0},{0,1,0,0},{0,0,0,0}},
-     {{0,1,0,0},{1,1,0,0},{0,1,0,0},{0,0,0,0}}}, 4, COLOR_T },
+     {{0,1,0,0},{1,1,0,0},{0,1,0,0},{0,0,0,0}}}, 4, 3},
 
   // L
   { {{{0,0,1,0},{1,1,1,0},{0,0,0,0},{0,0,0,0}},
      {{0,1,0,0},{0,1,0,0},{0,1,1,0},{0,0,0,0}},
      {{0,0,0,0},{1,1,1,0},{1,0,0,0},{0,0,0,0}},
-     {{1,1,0,0},{0,1,0,0},{0,1,0,0},{0,0,0,0}}}, 4, COLOR_L },
+     {{1,1,0,0},{0,1,0,0},{0,1,0,0},{0,0,0,0}}}, 4, 4},
 
   // J
   { {{{1,0,0,0},{1,1,1,0},{0,0,0,0},{0,0,0,0}},
      {{0,1,1,0},{0,1,0,0},{0,1,0,0},{0,0,0,0}},
      {{0,0,0,0},{1,1,1,0},{0,0,1,0},{0,0,0,0}},
-     {{0,1,0,0},{0,1,0,0},{1,1,0,0},{0,0,0,0}}}, 4, COLOR_J },
+     {{0,1,0,0},{0,1,0,0},{1,1,0,0},{0,0,0,0}}}, 4, 5},
 
   // S
   { {{{0,1,1,0},{1,1,0,0},{0,0,0,0},{0,0,0,0}},
      {{0,1,0,0},{0,1,1,0},{0,0,1,0},{0,0,0,0}},
      {{0,1,1,0},{1,1,0,0},{0,0,0,0},{0,0,0,0}},
-     {{0,1,0,0},{0,1,1,0},{0,0,1,0},{0,0,0,0}}}, 2, COLOR_S },
+     {{0,1,0,0},{0,1,1,0},{0,0,1,0},{0,0,0,0}}}, 2, 6},
 
   // Z
   { {{{1,1,0,0},{0,1,1,0},{0,0,0,0},{0,0,0,0}},
      {{0,0,1,0},{0,1,1,0},{0,1,0,0},{0,0,0,0}},
      {{1,1,0,0},{0,1,1,0},{0,0,0,0},{0,0,0,0}},
-     {{0,0,1,0},{0,1,1,0},{0,1,0,0},{0,0,0,0}}}, 2, COLOR_Z }
+     {{0,0,1,0},{0,1,1,0},{0,1,0,0},{0,0,0,0}}}, 2, 7}
 };
 
 Tetromino current; //current piece that user is contorlloing
@@ -121,7 +133,7 @@ void draw_block(int gx,int gy,unsigned short color) {
 void draw_grid() {
   for(int r=0;r<BOARD_ROWS;r++){
     for(int c=0;c<BOARD_COLS;c++){
-      draw_block(c,r,grid[r][c]?grid[r][c]:COLOR_EMPTY);
+      draw_block(c,r, colorMap[grid[r][c]]);
     }
   }
 }
@@ -133,7 +145,7 @@ void draw_current_piece(){
 	int x = px +c;
 	int y = py +r;
 	if(y>=0){
-	  draw_block(x,y,current.color);
+	  draw_block(x,y,colorMap[current.id]);
 	}
       }
     }
@@ -159,7 +171,7 @@ void place_piece() {
       if(current.shape[rotation][r][c]) {
 	int x=px+c, y=py+r;
 	if(y>=0 && y<BOARD_ROWS){
-	  grid[y][x]=current.color;
+	  grid[y][x]=current.id;
 	}
       }
     }
