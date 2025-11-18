@@ -10,8 +10,14 @@ AS               = msp430-elf-gcc -mmcu=${CPU} -c
 all: tetris.elf
 
 #additional rules for files
-tetris.elf: ${COMMON_OBJECTS} tetrisMain.o wdt_handler.o
+tetris.elf: tetrisMain.o wdt_handler.o
 	${CC} ${CFLAGS} ${LDFLAGS} -o $@ $^ -lTimer -lLcd
+
+tetrisMain.o: tetrisMain.c
+	${CC} ${CFLAGS} -c $< -o $@
+
+wdt_handler.o: wdt_handler.s
+	${AS} $< -o $@
 
 load: tetris.elf
 	msp430loader.sh $^
