@@ -14,6 +14,7 @@
 #define BOARD_COLS 10  //standard display
 #define BOARD_ROWS 20  //standrd display
 #define BOARD_OFFSET_X 24 //hidden rows allows for correct updates for tetris
+#define BOARD_OFFSET_Y 0 //no offset for y
 
 #define COLOR_I     COLOR_CYAN     
 #define COLOR_O     COLOR_YELLOW  
@@ -22,13 +23,17 @@
 #define COLOR_Z     COLOR_RED     
 #define COLOR_J     COLOR_BLUE    
 #define COLOR_L     COLOR_ORANGE
+#define COLOR_EMPTY COLOR_BLACK
 
-char grid[BOARD_ROWS][BOARD_COLS] = {0}; //this is the grid that stores if the place is occupied
+void spawn_piece();
+void draw_current_piece();
+
+unsigned short grid[BOARD_ROWS][BOARD_COLS] = {0}; //this is the grid that stores if the place is occupied
 
 typedef struct {
   char shape [4][4][4]; //each peice has a shape wit curr  rotation, row and col
   char nrot; //rotaion logic based on piece, how many diff rotations
-  unsigned short colo; //piece color
+  unsigned short color; //piece color
 } Tetromino;
 
 const Tetromino tetrominoes[7] = {//Seven unique pieces with amount of unique rotations + color
@@ -116,7 +121,7 @@ void draw_block(int gx,int gy,unsigned short color) {
 void draw_grid() {
   for(int r=0;r<BOARD_ROWS;r++){
     for(int c=0;c<BOARD_COLS;c++){
-      draw_block(c,r,grid[r][c]?COLOR_BLOCK:COLOR_EMPTY);
+      draw_block(c,r,grid[r][c]?grid[r][c]:COLOR_EMPTY);
     }
   }
 }
@@ -154,7 +159,7 @@ void place_piece() {
       if(current.shape[rotation][r][c]) {
 	int x=px+c, y=py+r;
 	if(y>=0 && y<BOARD_ROWS){
-	  grid[y][x]=1;
+	  grid[y][x]=current.color;
 	}
       }
     }
