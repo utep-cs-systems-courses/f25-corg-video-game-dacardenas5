@@ -1,10 +1,11 @@
 #include <msp430.h>
 #include <libTimer.h>
+#include <stdlib.h>
 #include "lcdutils.h"
 #include "lcddraw.h"
 
 #define SW1 1
-#define SW2 4
+#define SW2 2
 #define SW3 4
 #define SW4 8
 #define SWITCHES 15
@@ -12,7 +13,7 @@
 #define BLOCK_SIZE 8
 #define BOARD_COLS 10  //standard display
 #define BOARD_ROWS 20  //standrd display
-#define BOARD_OFFSET_x 24 //hidden rows allows for correct updates for tetris
+#define BOARD_OFFSET_X 24 //hidden rows allows for correct updates for tetris
 
 #define COLOR_I     COLOR_CYAN     
 #define COLOR_O     COLOR_YELLOW  
@@ -27,6 +28,7 @@ char grid[BOARD_ROWS][BOARD_COLS] = {0}; //this is the grid that stores if the p
 typedef struct {
   char shape [4][4][4]; //each peice has a shape wit curr  rotation, row and col
   char nrot; //rotaion logic based on piece, how many diff rotations
+  unsigned short colo; //piece color
 } Tetromino;
 
 const Tetromino tetrominoes[7] = {//Seven unique pieces with amount of unique rotations + color
@@ -119,6 +121,20 @@ void draw_grid() {
   }
 }
 
+void draw_current_piece(){
+  for(int r=0;r<4;r++){
+    for(int c=0;c<4;c++){
+      if(current.shape[rotation][r][c]){
+	int x = px +c;
+	int y = py +r;
+	if(y>=0){
+	  draw_block(x,y,current.color);
+	}
+      }
+    }
+  }
+}
+
 int collides(int nx,int ny,int nrot) {
   for(int r=0;r<4;r++){
     for(int c=0;c<4;c++){
@@ -152,7 +168,7 @@ void remove_lines() {
     
     for(int c=0;c<BOARD_COLS;c++){
       if(!grid[r][c]){
-	full=0};
+	full=0;
        }
     }
   
